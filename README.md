@@ -12,6 +12,32 @@ Microservicio público de información climática y geográfica.
 - app/main.py: Arranque de FastAPI
 - tests/: Pruebas
 
+## Diagrama de flujo de la solicitud
+
+Puedes ver el diagrama Mermaid en [docs/flujo_solicitud.mmd](docs/flujo_solicitud.mmd).
+
+<details>
+<summary>Ver diagrama Mermaid</summary>
+
+```mermaid
+flowchart TD
+    A[Cliente solicita /clima-info] --> B["FastAPI Endpoint (api/v1/endpoints.py)"]
+    B --> C["Lógica de Orquestación (use_cases/clima_info.py)"]
+    C --> D1["Adapter IP (infrastructure/ipinfo_api.py)"]
+    D1 -->|IP| C
+    C --> D2["Adapter País (infrastructure/country_api.py)"]
+    D2 -->|Datos país| C
+    C --> D3["Adapter Clima (infrastructure/weather_api.py)"]
+    D3 -->|Datos clima| C
+    C --> E["Construcción de respuesta (domain/models.py)"]
+    E --> F[Respuesta JSON al cliente]
+    B --> G["Auditoría (core/audit.py)"]
+    G -->|Log JSON| H[Archivo logs/consultas.log]
+    B --> I["Throttling (core/throttling.py / SlowAPI)"]
+    B --> J["Métricas (Prometheus Instrumentator)"]
+```
+</details>
+
 ## Uso con Poetry
 
 1. Instala Poetry si no lo tienes:
@@ -25,7 +51,8 @@ Microservicio público de información climática y geográfica.
 3. Crea el archivo `.env` con tu clave de OpenWeatherMap (ver `.env.example`).
 4. Activa el entorno virtual:
    ```bash
-   poetry shell
+   poetry env use python3.11  # Opcional, para fijar versión
+   poetry env activate
    ```
 5. Ejecuta la app:
    ```bash
