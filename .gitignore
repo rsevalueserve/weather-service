@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+
+# Poetry
+poetry.lock
+
+# Archivos de entorno
+.env
+.env.*
+
+# VSCode
+.vscode/
+
+# Otros
+*.log
+*.sqlite3
+*.db
+.DS_Store
+.idea/
+
+# Docker
+*.pid
+
+# Tests
+htmlcov/
+.coverage
+.cache/
+
+# Mac
+*.DS_Store
+
+# Linux
+*~
+
+# Windows
+Thumbs.db
