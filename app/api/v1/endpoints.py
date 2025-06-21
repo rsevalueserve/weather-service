@@ -19,12 +19,12 @@ def get_public_ip() -> str:
 
 
 @router.get("/clima-info", response_model=ClimaInfoResponse)
-def get_clima_info(request: Request):
+async def get_clima_info(request: Request):
     ip = request.headers.get("x-forwarded-for") or request.client.host
     # Si la IP es localhost, intenta obtener la IP pública real
     if ip.startswith("127.") or ip == "::1":
         ip = get_public_ip()
-    result = obtener_clima_info(ip)
+    result = await obtener_clima_info(ip)
     # Auditar consulta
     ip_info = {
         "ip": ip,

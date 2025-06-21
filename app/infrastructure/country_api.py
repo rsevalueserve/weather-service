@@ -1,13 +1,14 @@
 # country_api.py
 # Adapter para consumir REST Countries API
 
-import requests
+import httpx
 
 
-def obtener_info_pais(codigo_pais: str) -> dict:
+async def obtener_info_pais(codigo_pais: str) -> dict:
     url = f"https://restcountries.com/v3.1/alpha/{codigo_pais}"
-    resp = requests.get(url, timeout=5)
-    data = resp.json()
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, timeout=5)
+        data = resp.json()
     if not data or not isinstance(data, list):
         raise Exception("No se pudo obtener información del país")
     pais = data[0]

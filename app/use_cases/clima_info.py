@@ -7,17 +7,17 @@ from app.infrastructure.ipinfo_api import obtener_info_ip
 from app.domain.models import ClimaInfoResponse, OrigenConsulta
 
 
-def obtener_clima_info(ip: str) -> ClimaInfoResponse:
+async def obtener_clima_info(ip: str) -> ClimaInfoResponse:
     # 1. Obtener info geográfica de la IP
-    ip_info = obtener_info_ip(ip)
+    ip_info = await obtener_info_ip(ip)
     # ip_info debe tener: ciudad, region, pais (código)
 
     # 2. Obtener info del país
-    country_info = obtener_info_pais(ip_info['pais'])
+    country_info = await obtener_info_pais(ip_info['pais'])
     # country_info: capital, region, poblacion, moneda
 
     # 3. Obtener clima de la capital
-    clima = obtener_clima(country_info['capital'], country_info['pais'])
+    clima = await obtener_clima(country_info['capital'], country_info['pais'])
     # clima: temperatura_actual, condicion
 
     # 4. Construir respuesta
