@@ -40,3 +40,13 @@ Microservicio público de información climática y geográfica.
 
 - Swagger UI: http://localhost:8000/docs
 - Redoc: http://localhost:8000/redoc
+
+## Limitación conocida: Mensaje de error de rate limit (SlowAPI)
+
+> **Nota:** Cuando se excede el límite de peticiones por IP, SlowAPI responde con un mensaje en inglés por defecto:
+>
+> ```json
+> { "error": "Rate limit exceeded: 5 per 1 minute" }
+> ```
+>
+> Esto ocurre porque el middleware de SlowAPI responde antes de que FastAPI pueda usar el handler personalizado. No afecta la protección ni la funcionalidad, pero el mensaje no puede ser personalizado fácilmente. Si se requiere un mensaje en español, se recomienda implementar un rate limit custom o usar otra librería.

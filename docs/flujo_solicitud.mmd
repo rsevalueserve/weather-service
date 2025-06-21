@@ -1,0 +1,15 @@
+flowchart TD
+    A[Cliente solicita /clima-info] --> B["FastAPI Endpoint (api/v1/endpoints.py)"]
+    B --> C["Lógica de Orquestación (use_cases/clima_info.py)"]
+    C --> D1["Adapter IP (infrastructure/ipinfo_api.py)"]
+    D1 -->|IP| C
+    C --> D2["Adapter País (infrastructure/country_api.py)"]
+    D2 -->|Datos país| C
+    C --> D3["Adapter Clima (infrastructure/weather_api.py)"]
+    D3 -->|Datos clima| C
+    C --> E["Construcción de respuesta (domain/models.py)"]
+    E --> F[Respuesta JSON al cliente]
+    B --> G["Auditoría (core/audit.py)"]
+    G -->|Log JSON| H[Archivo logs/consultas.log]
+    B --> I["Throttling (core/throttling.py / SlowAPI)"]
+    B --> J["Métricas (Prometheus Instrumentator)"]
