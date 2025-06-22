@@ -7,6 +7,8 @@ from app.core.throttling import register_throttling
 from slowapi.middleware import SlowAPIMiddleware
 from app.api.v1.endpoints import router as v1_router
 from prometheus_fastapi_instrumentator import Instrumentator
+import logging
+import sys
 
 app = FastAPI(title="Weather Info Microservice")
 
@@ -19,3 +21,9 @@ add_global_exception_handlers(app)
 app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(v1_router, prefix="/api/v1")
+
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    force=True
+)

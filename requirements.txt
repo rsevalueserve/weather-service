@@ -4,3 +4,5 @@ pydantic
 slowapi
 requests
 python-dotenv
+httpx
+prometheus_fastapi_instrumentator

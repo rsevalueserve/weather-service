@@ -12,6 +12,12 @@ Microservicio público de información climática y geográfica.
 - app/main.py: Arranque de FastAPI
 - tests/: Pruebas
 
+## Despliegue local en Minikube
+
+Consulta la guía completa de despliegue y pruebas en:
+
+- [minikube-setup.md](./minikube-setup.md)
+
 ## Diagrama de flujo de la solicitud
 
 Puedes ver el diagrama Mermaid en [docs/flujo_solicitud.mmd](docs/flujo_solicitud.mmd).

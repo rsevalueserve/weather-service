@@ -43,3 +43,7 @@ htmlcov/
 
 # Windows
 Thumbs.db
+
+# Logs de troubleshooting en contenedores
+/tmp/ip_debug.log
+/tmp/ipinfo_debug.log
