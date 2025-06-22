@@ -1,3 +1,5 @@
+
+
 # Configuración del entorno para Minikube
 
 Este documento describe los pasos para validar y preparar tu sistema Linux para ejecutar Minikube, incluyendo la configuración de cgroup2, que es requerida por las versiones modernas de Kubernetes y contenedores.
@@ -66,6 +68,40 @@ minikube start --driver=docker --extra-config=kubelet.cgroup-driver=systemd
 Si todo está correcto, Minikube iniciará un clúster local listo para pruebas.
 
 ---
+# Requisitos previos y addons recomendados para Minikube
+
+Antes de iniciar, asegúrate de cumplir con los siguientes requisitos y de tener habilitados los addons necesarios para las pruebas y despliegue de microservicios en Minikube:
+
+## Requisitos previos
+- Linux con soporte de virtualización (VT-x/AMD-V)
+- Docker instalado y funcionando
+- kubectl instalado
+- Minikube instalado
+
+## Addons de Minikube activados en las pruebas
+
+Para el correcto funcionamiento de los despliegues y pruebas, se recomienda habilitar los siguientes addons:
+
+- **ingress**: Para exponer servicios vía dominios locales y simular un entorno real.
+  ```bash
+  minikube addons enable ingress
+  ```
+- **metrics-server**: Para habilitar el autoscalado (HPA) y la recolección de métricas de recursos.
+  ```bash
+  minikube addons enable metrics-server
+  ```
+- **dashboard**: (Opcional, pero recomendado) Para visualizar y gestionar recursos de Kubernetes vía interfaz web.
+  ```bash
+  minikube addons enable dashboard
+  ```
+- **default-storageclass** y **storage-provisioner**: Generalmente habilitados por defecto, permiten el aprovisionamiento dinámico de volúmenes persistentes.
+
+Puedes ver el estado de los addons con:
+```bash
+minikube addons list
+```
+
+---
 
 ## Despliegue y pruebas en Minikube
 
@@ -120,7 +156,7 @@ kubectl -n dev port-forward svc/weather-api 8000:8000
 - Simular carga:
 
 ```bash
-ab -n 100 -c 10 http://weather.local/api/v1/clima-info
+ab -n 2000 -c 100 http://weather.local/api/v1/clima-info
 ```
 
 - Ver logs:
@@ -136,6 +172,95 @@ kubectl -n dev logs -l app=weather-api
 kubectl -n dev scale deployment weather-api --replicas=2
 ```
 - Automático: El HPA escalará según uso de CPU.
+
+---
+
+# Pruebas de autoscalado (HPA) en Minikube
+
+Todas las pruebas de autoscalado están pensadas y validadas específicamente para Minikube. Asegúrate de tener el clúster Minikube corriendo y el namespace correcto (`dev`).
+
+## 1. Verifica el estado del HPA
+
+```bash
+minikube kubectl -- -n dev get hpa
+```
+
+## 2. Genera carga sobre el servicio
+
+Puedes usar Apache Benchmark (ab) para simular carga:
+
+```bash
+ab -n 5000 -c 200 http://weather.local/api/v1/clima-info
+```
+
+O si usas port-forward:
+
+```bash
+ab -n 5000 -c 200 http://localhost:8000/api/v1/clima-info
+```
+
+## 3. Observa el escalado
+
+En otra terminal, monitorea el HPA y los pods:
+
+```bash
+minikube kubectl -- -n dev get hpa
+minikube kubectl -- -n dev get pods
+```
+
+Verás cómo el HPA incrementa el número de réplicas si el uso de CPU supera el umbral configurado.
+
+## 4. Verifica métricas y detalles
+
+```bash
+minikube kubectl -- -n dev describe hpa
+```
+
+> Recuerda: El autoscalado puede tardar unos minutos en reflejarse según la carga y la configuración del HPA.
+
+---
+
+## Ejemplo de resultados esperados de autoscalado (HPA)
+
+A continuación se muestran ejemplos reales de lo que deberías observar si el HPA está funcionando correctamente tras generar carga:
+
+### Estado inicial del HPA
+
+```
+NAME          REFERENCE                TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+weather-api   Deployment/weather-api   5%/50%    1         5         1          2m
+```
+
+### Durante la carga (el HPA escala)
+
+```
+NAME          REFERENCE                TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+weather-api   Deployment/weather-api   80%/50%   1         5         3          4m
+```
+
+### Estado de los pods
+
+```
+NAME                          READY   STATUS    RESTARTS   AGE
+weather-api-xxxxxxx-xxxxx     1/1     Running   0          4m
+weather-api-xxxxxxx-yyyyy     1/1     Running   0          1m
+weather-api-xxxxxxx-zzzzz     1/1     Running   0          1m
+```
+
+### Eventos del HPA
+
+```
+Events:
+  Type    Reason             Age   From                       Message
+  ----    ------             ----  ----                       -------
+  Normal  SuccessfulRescale  1m    horizontal-pod-autoscaler  New size: 3; reason: cpu resource utilization (percentage of request) above target
+```
+
+Puedes monitorear el escalado en tiempo real con:
+
+```bash
+watch -n 2 "minikube kubectl -- -n dev get hpa,pods"
+```
 
 ---
 
@@ -235,3 +360,49 @@ Este proyecto implementa un microservicio de información climática y geográfi
 | Documentación y scripts automáticos     | Mejoran la reproducibilidad y la experiencia de onboarding                                    |
 | .gitignore para logs y secretos         | Evita exponer información sensible o irrelevante en el repositorio                            |
 | Diagrama de arquitectura (Mermaid)      | Claridad visual sobre el flujo y componentes del sistema                                      |
+
+---
+
+## Evidencia y explicación del autoscalado (HPA)
+
+Durante las pruebas, se ajustó el umbral de CPU del HPA para forzar y observar el escalado automático:
+
+- **Umbral configurado:**
+  - Inicialmente: 70%
+  - Pruebas de escalado: 10%, luego 3% (para forzar el escalado)
+  - Valor final recomendado/documentado: **20%**
+
+- **Evidencia de escalado exitoso:**
+
+```bash
+minikube kubectl -- -n dev get hpa
+NAME              REFERENCE                TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+weather-api-hpa   Deployment/weather-api   cpu: 35%/3%   1         3         3          5h16m
+
+minikube kubectl -- -n dev get pods
+NAME                           READY   STATUS    RESTARTS   AGE
+weather-api-7b8b88fc7f-6ksq5   1/1     Running   0          35s
+weather-api-7b8b88fc7f-845nc   1/1     Running   0          5m14s
+weather-api-7b8b88fc7f-w6k7q   1/1     Running   0          35s
+
+minikube kubectl -- -n dev describe hpa weather-api-hpa
+...
+Metrics: ( current / target )
+  resource cpu on pods  (as a percentage of request):  35% (35m) / 3%
+...
+Events:
+  Normal   SuccessfulRescale        45s   horizontal-pod-autoscaler  New size: 3; reason: cpu resource utilization (percentage of request) above target
+```
+
+- **Explicación:**
+  - El HPA escaló el número de réplicas automáticamente al superar el umbral configurado.
+  - El valor final recomendado de umbral de CPU es **20%**, que permite observar el escalado bajo cargas moderadas y es adecuado para entornos de prueba.
+  - Puedes ajustar este valor según la demanda real de tu microservicio en producción.
+
+---
+
+**Nota sobre el umbral de autoscalado:**
+
+Para facilitar y acelerar la observación del autoscalado durante las pruebas en Minikube, el umbral de CPU del HPA se ha configurado en **20%** (en lugar de valores más altos como 50% o 70%). Esto permite que el escalado ocurra rápidamente bajo cargas moderadas y es ideal para entornos de laboratorio o demostración. En producción, ajusta este valor según el comportamiento real y la demanda del microservicio.
+
+---

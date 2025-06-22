@@ -14,9 +14,16 @@ Microservicio público de información climática y geográfica.
 
 ## Despliegue local en Minikube
 
-Consulta la guía completa de despliegue y pruebas en:
+Consulta la guía completa de despliegue, configuración de addons y pruebas (incluyendo valores de HPA y rate limit) en:
 
 - [minikube-setup.md](./minikube-setup.md)
+
+**Resumen de configuración para pruebas recientes:**
+- Addons Minikube habilitados: `ingress`, `metrics-server`, `dashboard`, `default-storageclass`, `storage-provisioner`.
+- Umbral de autoscalado (HPA): **20%** de CPU (ver `k8s/hpa.yaml`).
+- Límite de rate limit (SlowAPI): **5 peticiones por minuto por IP** (ver mensaje de error conocido abajo).
+
+---
 
 ## Diagrama de flujo de la solicitud
 
